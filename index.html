@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>КУБ РОГАЛИК — Квадрат Против Волн</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='15' y='15' width='70' height='70' rx='12' fill='%234ade80'/></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="1280" height="720"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="hud-top">
+      <div id="hud-left">
+        <div id="floor-badge">ЭТАЖ 1/3 · <span id="floor-name">Подземелье</span></div>
+        <div id="wave-badge">ВОЛНА <span id="wave-num">1</span>/6 · <span id="enemies-left">0</span> 👾</div>
+        <div id="hp-wrap"><div id="hp-bar"></div><span id="hp-text"></span></div>
+        <div id="xp-wrap"><div id="xp-bar"></div><span id="xp-text">ур.1</span></div>
+        <div id="dash-wrap"></div>
+      </div>
+      <div id="hud-right">
+        <div id="stats-line">⏱ <span id="stat-time">0:00</span> · 💀 <span id="stat-kills">0</span> · 🪙 <span id="stat-coins">0</span></div>
+        <div id="boss-wrap" class="hidden"><div id="boss-name">БОСС</div><div id="boss-bar-outer"><div id="boss-bar"></div></div></div>
+        <div id="build-line"></div>
+      </div>
+    </div>
+    <div id="msg"></div>
+    <div id="interact-tip" class="hidden">Нажми <b>E</b> / тап</div>
+  </div>
+
+  <!-- Главное меню -->
+  <div id="menu" class="screen">
+    <div class="logo-sub">★ ROGUELIKE ★</div>
+    <h1 class="logo">КУБ<span>-</span>РОГАЛИК</h1>
+    <div class="logo-desc">Квадратик против бесконечных волн · 3 этажа · 8 врагов · 3 босса</div>
+    <div class="menu-grid">
+      <div class="menu-main">
+        <button id="btn-start" class="btn big">▶ НАЧАТЬ ЗАБЕГ</button>
+        <button id="btn-continue" class="btn hidden">↻ ПРОДОЛЖИТЬ</button>
+        <button id="btn-how" class="btn ghost">❓ КАК ИГРАТЬ</button>
+        <button id="btn-codex" class="btn ghost">📖 БЕСТИАРИЙ</button>
+        <div class="settings-row">
+          <label><input type="checkbox" id="set-screenshake" checked> Тряска</label>
+          <label><input type="checkbox" id="set-particles" checked> Частицы</label>
+          <label><input type="checkbox" id="set-autoaim" checked> Автоприцел</label>
+          <label>🔊 <input type="range" id="set-vol" min="0" max="100" value="55"></label>
+        </div>
+        <div class="best">🏆 Рекорд: <span id="best-score">0</span> · побед: <span id="best-wins">0</span></div>
+        <div class="controls-hint">WASD / стрелки — движение · мышь — прицел · ЛКМ — огонь · <b>Space / Shift</b> — рывок · <b>E</b> — подобрать · <b>P / Esc</b> — пауза</div>
+      </div>
+      <div class="menu-side">
+        <h3>⚔️ Что внутри</h3>
+        <ul>
+          <li>🟩 <b>3 этажа:</b> Подземелье → Ледяные пещеры → Адская кузня</li>
+          <li>👾 <b>8 врагов:</b> слайм, спринтер, стрелок, танк, сплиттер, призрак, камикадзе, лекарь + элитки</li>
+          <li>👹 <b>3 босса:</b> Голем-Матка, Ледяная Гидра, Король Кубов</li>
+          <li>⬆️ <b>18 улучшений,</b> 5 оружий, сундуки, магазин, руны</li>
+          <li>📱 Поддержка телефона (два джойстика)</li>
+        </ul>
+        <h3>🎯 Цель</h3>
+        <p>Переживи по 5 волн на этаже, убей босса, спустись через портал. Зачисть 3 этажа и победи Короля Кубов!</p>
+        <div class="hero-picker">
+          <div>Выбери квадрат:</div>
+          <div id="skins"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- How to -->
+  <div id="how" class="screen hidden">
+    <h2>❓ Как играть</h2>
+    <div class="cols">
+      <div><h3>⌨️ Управление</h3><p>WASD / стрелки — движение<br>Мышь — прицел, ЛКМ / пробел-огонь — стрельба<br>Shift / Space / ПКМ — рывок (неуязвимость)<br>E — открыть сундук / портал / подобрать<br>P или Esc — пауза · M — звук</p></div>
+      <div><h3>📱 Телефон</h3><p>Левый стик — движение, правый — стрельба. Кнопка ⚡ — рывок. Авто-прицел включён по умолчанию.</p></div>
+      <div><h3>💡 Советы</h3><p>• Собирай зелёные кристаллы опыта.<br>• Кайти камикадзе, убивай лекарей первыми.<br>• Рывок даёт 0.35с неуязвимости.<br>• Между этажами трать монеты в магазине.<br>• Сундуки = оружие и руны.</p></div>
+    </div>
+    <button class="btn back-btn" data-back>← НАЗАД</button>
+  </div>
+
+  <!-- Codex -->
+  <div id="codex" class="screen hidden">
+    <h2>📖 Бестиарий</h2>
+    <div id="codex-grid"></div>
+    <button class="btn back-btn" data-back>← НАЗАД</button>
+  </div>
+
+  <!-- Level up -->
+  <div id="levelup" class="screen modal hidden">
+    <h2>⬆️ УРОВЕНЬ <span id="lvl-num"></span>! Выбери улучшение</h2>
+    <div id="up-cards"></div>
+    <div id="reroll-row"><button id="btn-reroll" class="btn ghost small">🎲 Реролл (<span id="reroll-n">1</span>)</button></div>
+  </div>
+
+  <!-- Shop -->
+  <div id="shop" class="screen modal hidden">
+    <h2>🛒 Магазин глубин · <span id="shop-coins"></span> 🪙</h2>
+    <p id="shop-sub">Этаж зачищен! Подготовься к следующему.</p>
+    <div id="shop-grid"></div>
+    <button id="btn-next-floor" class="btn big">⬇ СПУСТИТЬСЯ НА ЭТАЖ <span id="next-floor-n"></span> ⬇</button>
+  </div>
+
+  <!-- Chest -->
+  <div id="chest" class="screen modal hidden">
+    <h2>🎁 Сундук!</h2>
+    <div id="chest-cards"></div>
+  </div>
+
+  <!-- Pause -->
+  <div id="pause" class="screen modal hidden">
+    <h2>⏸ Пауза</h2>
+    <div id="pause-stats"></div>
+    <button id="btn-resume" class="btn big">▶ Продолжить</button>
+    <button id="btn-restart2" class="btn ghost">↻ Заново</button>
+    <button id="btn-quit" class="btn ghost">🏠 В меню</button>
+  </div>
+
+  <!-- Game over -->
+  <div id="gameover" class="screen modal hidden">
+    <h2 id="go-title">💀 Ты погиб...</h2>
+    <div id="go-stats"></div>
+    <div id="go-new" class="hidden">🎉 НОВЫЙ РЕКОРД! 🎉</div>
+    <button id="btn-retry" class="btn big">↻ ЕЩЁ РАЗ</button>
+    <button id="btn-menu2" class="btn ghost">🏠 В меню</button>
+  </div>
+
+  <!-- Victory -->
+  <div id="victory" class="screen modal hidden">
+    <h2>🏆 ПОБЕДА! Король Кубов повержен!</h2>
+    <div id="win-stats"></div>
+    <button id="btn-endless" class="btn big">♾ БЕСКОНЕЧНЫЙ РЕЖИМ</button>
+    <button id="btn-menu3" class="btn ghost">🏠 В меню</button>
+  </div>
+
+  <!-- Touch -->
+  <div id="touch" class="hidden">
+    <div id="stick-l"><div id="stick-l-knob"></div></div>
+    <div id="stick-r"><div id="stick-r-knob"></div></div>
+    <button id="btn-dash-t">⚡</button>
+    <button id="btn-act-t">E</button>
+  </div>
+  <div id="flash"></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
